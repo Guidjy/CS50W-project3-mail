@@ -27,12 +27,43 @@ function compose_email() {
 
 function load_mailbox(mailbox) {
   
-  // Show the mailbox and hide other views
-  document.querySelector('#emails-view').style.display = 'block';
-  document.querySelector('#compose-view').style.display = 'none';
+    // Show the mailbox and hide other views
+    document.querySelector('#emails-view').style.display = 'block';
+    document.querySelector('#compose-view').style.display = 'none';
 
-  // Show the mailbox name
-  document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+    // Show the mailbox name
+    document.querySelector('#emails-view').innerHTML = `<h3>${mailbox.charAt(0).toUpperCase() + mailbox.slice(1)}</h3>`;
+
+    // make GET request to /emails/<mailbox>
+    fetch(`/emails/${ mailbox }`)
+    .then(response => response.json())
+    .then(emails => {
+        // render emails
+        emails.forEach(email => {
+            const emailCard = document.createElement('a');
+            emailCard.href = '#'
+            emailCard.className = 'link-dark text-decoration-none'
+            emailCard.innerHTML = `
+                <div id="email-${email.id}" class="container-fluid">
+                    <div class="row d-flex justify-content-between border-top border-start border-end border-2">
+                        <div class="col d-inline-flex">
+                            <p class="fw-bold me-3">${email.sender}</p>
+                            <p>${email.subject}</p>
+                        </div>
+                        <div class="col d-flex justify-content-end">
+                            <p class="fw-light">${email.timestamp}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.querySelector('#emails-view').appendChild(emailCard);
+            if (email.read === true) {
+                document.querySelector(`#email-${email.id}`).className += ' bg-light';
+            }
+        });
+        // fixing the border at the bottom
+        document.querySelector('#emails-view').className += 'border-bottom border-2'
+    });
 }
 
 
@@ -68,11 +99,11 @@ function send_email(event) {
     .then(result => {
         // if there isn't an error in the parsed result
         if (result.error === undefined) {
-            load_mailbox('sent')
+            load_mailbox('sent');
         // if there is, then the user has to correct their email
         } else {
-            errorAlertDiv.innerHTML = result.error
-            errorAlertDiv.style.display = 'block'
+            errorAlertDiv.innerHTML = result.error;
+            errorAlertDiv.style.display = 'block';
         }
     });
 
