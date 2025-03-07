@@ -16,17 +16,27 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 
-function compose_email() {
+function compose_email(reply=null) {
 
-  // Show compose view and hide other views
-  document.querySelector('#emails-view').style.display = 'none';
-  document.querySelector('#email-view').style.display = 'none';
-  document.querySelector('#compose-view').style.display = 'block';
+    // Show compose view and hide other views
+    document.querySelector('#emails-view').style.display = 'none';
+    document.querySelector('#email-view').style.display = 'none';
+    document.querySelector('#compose-view').style.display = 'block';
 
   // Clear out composition fields
-  document.querySelector('#compose-recipients').value = '';
-  document.querySelector('#compose-subject').value = '';
-  document.querySelector('#compose-body').value = '';
+    if (reply !== null) {
+        document.querySelector('#compose-recipients').value = reply.sender;
+        if (!reply.subject.startsWith('Re: ')) {
+            document.querySelector('#compose-subject').value = `Re: ${reply.subject}`;
+        } else {
+            document.querySelector('#compose-subject').value = reply.subject;
+        }
+        document.querySelector('#compose-body').value = `On ${reply.timestamp} ${reply.sender} wrote: \n ${reply.body}`;
+    } else {
+        document.querySelector('#compose-recipients').value = '';
+        document.querySelector('#compose-subject').value = '';
+        document.querySelector('#compose-body').value = '';
+    }
 }
 
 
@@ -135,6 +145,14 @@ function view_email(event, email_id) {
         oldEmail.remove();
     }
 
+    // makes a PUT request to "/emails/<email_id>" to mark the email as read
+    fetch(`/emails/${email_id}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+            read: true
+        })
+    });
+
     // makes a get request to "/emails/<email_id>" to request the email
     fetch(`/emails/${email_id}`)
     .then(response => response.json())
@@ -207,16 +225,8 @@ function view_email(event, email_id) {
                 subject: email.subject,
                 body: email.body,
                 timestamp: email.timestamp
-
             };
+            compose_email(replyData);
         });
-    });
-
-    // makes a PUT request to "/emails/<email_id>" to mark the email as read
-    fetch(`/emails/${email_id}`, {
-        method: 'PUT',
-        body: JSON.stringify({
-            read: true
-        })
     });
 }
